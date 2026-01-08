@@ -1,0 +1,150 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\title{Functional Degeneracy and Attainable Optimality Under Execution Delay}
+\author{Oren Hadri}
+\date{\today}
+
+\newtheorem{proposition}{Proposition}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Decision-making under execution delay and non-negligible costs arises in diverse domains, including algorithmic trading and distributed systems control. In such settings, the instantaneous hindsight-optimal decision is causally unattainable, yet it remains the dominant benchmark in both theory and practice. This position paper argues that performance limitations in delayed systems are better understood through the structure of $\varepsilon$-optimal decision sets. We introduce the notion of \emph{functional degeneracy}---the prevalence and temporal persistence of near-optimal decisions---and contend that degeneracy, rather than algorithmic sophistication, determines which benchmarks are attainable. Using short-horizon trading as an illustrative case study, we present empirical evidence that $\varepsilon$-optimal regions are often wide and persistent under realistic costs, and that stable, selective policies outperform aggressive adaptation precisely in these regimes. We further reinterpret sampling-based control mechanisms (e.g., SampleX-like designs) as implicit exploitations of degeneracy rather than approximations of sharp optima. The paper advances a unifying perspective in which stability emerges as a structural consequence of the decision landscape, and outlines open directions for formalizing the role of degeneracy in delayed control.
+\end{abstract}
+
+\section{Position and Motivation}
+This paper advances a single position: in delayed decision-making problems with noise and frictions, the primary obstacle is often \emph{benchmark mismatch}, not a lack of predictive accuracy. The per-time-step (instantaneous) optimum is a hindsight object that typically depends on contemporaneous outcomes and therefore cannot serve as an operational comparator under actuation delay. What matters in practice is whether the environment admits \emph{persistent near-optimal decision regions} that remain viable across the control horizon. When such regions exist, stability and selectivity are not heuristic regularizers but structurally aligned responses.
+
+The goal here is to (i) articulate this framing precisely, (ii) ground it with illustrative empirical evidence, and (iii) clarify research directions that follow from the framing.
+
+\section{Model and Benchmark Mismatch}
+Let $D$ be a finite decision set. Time is discrete: $t=1,\dots,T$. At each time $t$ there is a realized cost function
+\[
+C_t: D \to \mathbb{R},
+\]
+where lower is better. In many control loops, decisions are subject to an actuation delay $\tau\ge 1$. An issued decision $u_t\in D$ is executed after delay, so the executed decision at time $t$ is
+\[
+d_t = u_{t-\tau}.
+\]
+Consequently, $d_t$ cannot depend on $C_t$ (or on contemporaneous realized outcomes that determine $C_t$). This is a hard information constraint.
+
+The instantaneous hindsight-optimal action is
+\[
+d_t^\star \in \arg\min_{d\in D} C_t(d),
+\]
+and the corresponding cumulative optimum is $\sum_{t=1}^T \min_{d\in D} C_t(d)$. Under delay, this benchmark is generally unattainable by any non-anticipatory policy. Therefore, negative conclusions framed as ``regret relative to the instantaneous optimum'' can reflect an invalid comparator as much as algorithmic deficiency.
+
+\section{$\varepsilon$-Optimality and Functional Degeneracy}
+Rather than focusing on a single optimum, we consider near-optimal decisions.
+
+\paragraph{Definition ($\varepsilon$-optimal set).}
+For $\varepsilon\ge 0$, define
+\[
+G_t(\varepsilon) = \left\{ d \in D : C_t(d) \le \min_{d'\in D} C_t(d') + \varepsilon \right\}.
+\]
+
+\paragraph{Functional degeneracy.}
+We use \emph{functional degeneracy} to denote two coupled properties of $\{G_t(\varepsilon)\}$:
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Multiplicity:} $|G_t(\varepsilon)|$ is frequently larger than one.
+\item \textbf{Persistence:} the sets overlap over time, e.g., $G_t(\varepsilon)\cap G_{t+1}(\varepsilon)\neq\varnothing$ for most $t$ (and more generally overlap over $\tau$ steps).
+\end{enumerate}
+Intuitively, multiplicity says the landscape is locally flat; persistence says the flat region moves slowly enough for delayed control to exploit it.
+
+This framing separates \emph{environmental structure} from \emph{algorithmic choice}: degeneracy is a property of the realized costs, not of the policy.
+
+\section{Illustrative Evidence: Short-Horizon Trading}
+
+\paragraph{Empirical Setup.}
+To ground the discussion, we summarize an empirical sweep based on a simple delayed decision problem constructed from high-frequency price observations of a single liquid asset (BTC--USDT). Using one week of 1-second price data (mid-prices), we consider a discrete decision set consisting of three actions corresponding to negative, zero, and positive exposure ($D=\{-1,0,+1\}$; short/flat/long). Each decision is evaluated over a fixed future horizon, with performance measured by the realized price change over that horizon minus conservative execution costs.
+
+The sweep varies three parameters: execution delay $\tau \in \{0,1,2,5\}$ seconds, evaluation horizon $H \in \{120,300,600,3600\}$ seconds (return horizon), and per-decision execution cost $\kappa \in \{2,10,15\}$ basis points (bps), with $\varepsilon$ set equal to $\kappa$. This construction yields a controlled environment for studying how delay, horizon length, and costs jointly shape the geometry and persistence of $\varepsilon$-optimal decision sets.
+
+\paragraph{Empirical Findings.}
+Degeneracy depends strongly on the interaction between costs and evaluation horizon. Empirically measured degeneracy rates are high for short to medium horizons under non-negligible per-decision costs, and substantially weaker for long horizons when costs are small. This indicates that functional degeneracy is regime-dependent: it emerges when frictions and short-horizon variability dominate expected performance differences between actions.
+
+Stability is beneficial precisely in regimes where degeneracy is high. Comparing an aggressive, frequently switching baseline to a stable policy based on windowed lower-confidence-bound decisions, stable policies achieve superior performance for moderate to high costs and short to medium horizons. This advantage disappears---and can reverse---for long horizons where degeneracy is weakest. This pattern supports the conditional claim that stability is beneficial if and only if near-optimal decision regions are wide and temporally persistent.
+
+Delay effects are secondary within the tested range. For delays between $0$ and $5$ seconds, performance differences are dominated by costs and horizon length rather than by delay itself. This does not negate the conceptual role of delay in benchmark mismatch; rather, it suggests that larger delays, different noise regimes, or alternative objectives may be required to elicit a strong empirical delay signature. In the present setting, delay primarily acts by invalidating instantaneous benchmarks, rather than as a dominant quantitative factor.
+
+\section{Related Work}
+
+Online decision-making under delay, non-stationarity, and switching frictions has been studied extensively across online learning, control, and operations research. Foundational work on tracking the best expert, online convex optimization, and dynamic regret establishes that meaningful guarantees relative to time-varying comparators require restrictions on comparator variation or explicit switching penalties \cite{herbster2001tracking,zinkevich2003online,altschuler2018online,besbes2015nonstationary,hazan2017introduction}. Work on online learning with delayed feedback formalizes delay as an information constraint and clarifies why comparison to instantaneous optima is generally infeasible under actuation delay \cite{joulani2013online,quanrud2015online}.
+
+Stability has been addressed algorithmically through smoothing, regularization, and explicit switching penalties in online optimization and control \cite{chen2016smoothed,kalai2005efficient}. Sampling-based and coarse-grained control mechanisms in distributed systems and caching further demonstrate that simple or randomized policies can perform competitively in large-scale systems \cite{liu2023sampling,mitzenmacher2018model}, though these approaches are typically justified as computational approximations to offline optima rather than as consequences of the attainable decision geometry.
+
+Recent contributions continue to refine dynamic-regret analyses and delayed-feedback models, including adaptive algorithms for non-stationary environments and applications to control and trading. Despite algorithmic advances, these works largely preserve the same benchmark structure—performance measured against instantaneous or rapidly varying comparators, sometimes augmented with explicit variation or switching budgets—rather than addressing when such benchmarks are intrinsically unattainable under actuation delay.
+
+The perspective advanced here is complementary. Rather than proposing new algorithms or tighter regret bounds, we emphasize the structure of $\varepsilon$-optimal decision sets induced by realized costs. Functional degeneracy—the multiplicity and temporal persistence of near-optimal decisions—identifies structural conditions under which stability-respecting, delay-compatible decision sequences are near-optimal without explicit regularization, and clarifies when instability is unavoidable regardless of algorithmic sophistication.
+
+
+\section{Reframing Sampling-Based Control (SampleX Archetype)}
+Sampling-based optimization mechanisms (e.g., SampleX-like designs) \cite{liu2023sampling} in distributed systems are often framed as approximations to offline optima. Under a control interpretation, however, these systems repeatedly (re)configure from past measurements and deploy configurations for extended intervals, inducing an effective actuation delay. In such settings, the relevant question is not whether sampling tracks the instantaneous optimum, but whether the environment admits a thick and persistent $\varepsilon$-optimal region. When the $\varepsilon$-optimal set is combinatorially large and evolves slowly (e.g., under head-dominated workloads), sampling succeeds by selecting representatives from a thick region that remains viable across the control horizon.
+
+This perspective shifts the justification of sampling from ``computational approximation'' to ``structural alignment with attainable benchmarks.''
+
+\section{Design Implications}
+If functional degeneracy is present, system design should emphasize:
+\begin{itemize}
+\item explicit no-trade / no-change regions,
+\item temporal aggregation (windowing) and selective updates,
+\item conservative decision rules (e.g., confidence bounds) rather than pointwise tracking,
+\item evaluation against stability-respecting comparators rather than instantaneous optima.
+\end{itemize}
+Conversely, when $\varepsilon$-optimal sets are thin and non-overlapping, delay makes tracking brittle: either the policy thrashes (maximal switching) or it incurs unavoidable loss relative to the instantaneous optimum benchmark. The proposed benchmarks are not chosen to favor stable policies, but to reflect feasibility under delayed information; when such benchmarks diverge from the instantaneous optimum, the discrepancy reflects an information constraint rather than an algorithmic preference.
+
+\section{A Formal Statement (Without Proof)}
+The following proposition formalizes the core intuition.
+
+\begin{proposition}[Persistent degeneracy enables stable near-optimality]
+Let $D$ be finite and let $C_t:D\to\mathbb{R}$ be realized costs. Fix $\varepsilon>0$ and define $G_t(\varepsilon)$ as above. Assume that over horizon $T$:
+\begin{enumerate}[label=(\alph*)]
+\item \textbf{Multiplicity:} there exists $\alpha>0$ such that $|G_t(\varepsilon)|\ge 2$ for at least $\alpha T$ time indices $t$; and
+\item \textbf{Persistence:} $G_t(\varepsilon)\cap G_{t+1}(\varepsilon)\neq\varnothing$ for all but $o(T)$ times.
+\end{enumerate}
+Then there exists a decision sequence $\{d_t\}_{t=1}^T$ with $o(T)$ switches such that
+\[
+\sum_{t=1}^T C_t(d_t) \le \sum_{t=1}^T \min_{d\in D} C_t(d) + O(\varepsilon T).
+\]
+\end{proposition}
+
+The role of this statement is not to introduce a novel inequality, but to make explicit the structural conditions under which stability is achievable without incurring additional regret. A proof, quantitative dependence on overlap rates (including $\tau$-step overlap), and tight converse results are left to future work.
+
+\noindent\textbf{\noindent\textbf{Remark (No need for explicit linear switching penalties).}}
+Under the degeneracy and $\tau$-step persistence conditions of Proposition~1,
+stability does not require the addition of an explicit linear switching penalty.
+In particular, consider an objective augmented with a linear switching cost
+\[
+\sum_{t=1}^T C_t(d_t)
+\;+\;
+\lambda \sum_{t=2}^T \mathbf{1}\{ d_t \neq d_{t-1} \},
+\]
+for any fixed $\lambda > 0$.
+When $\varepsilon$-optimal decision sets are wide and persist over the actuation delay,
+bounded switching and $O(\varepsilon T)$-near-optimality are attainable even in the
+unregularized objective. In this regime, stability is a consequence of the geometry
+of the realized cost landscape rather than an effect induced by penalization.
+
+\section{Future Research Directions}
+The position above motivates several concrete research directions:
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Overlap diagnostics:} define and estimate $\tau$-step overlap metrics that predict when stability is essentially free.
+\item \textbf{Impossibility under thin optima:} develop tight lower bounds quantifying unavoidable loss when overlap collapses frequently \cite{hadri2026thin}.
+\item \textbf{Stability-respecting benchmarks:} formalize comparators with bounded switching (or bounded variation) and characterize when they are near-optimal.
+\item \textbf{Cross-domain generalization:} test degeneracy diagnostics in caching, routing, load balancing, and other delayed control loops.
+\item \textbf{Empirical validation:} broaden empirical studies across assets, regimes, and objectives; quantify uncertainty and robustness.
+\end{enumerate}
+
+\section{Conclusion}
+Stability in delayed decision-making problems is not inherently a heuristic regularization. It is a consequence of the attainable geometry of the decision landscape. Functional degeneracy---the prevalence and temporal persistence of near-optimal decisions---provides a unifying explanation for why simple, stable, and even randomized policies can perform competitively under delay, and clarifies when such approaches must fail.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
