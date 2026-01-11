@@ -26,10 +26,10 @@ deployment code is provided.
 
 ## Versioning and Archival
 Tagged releases correspond to archived versions on Zenodo with persistent DOIs.
-The current stable release is **v1.0.0**.
+The current stable release is **v1.0.1**.
 
-Archived release (v1.0.0):  
-https://doi.org/10.5281/zenodo.18189767
+Archived release (v1.0.1):  
+https://doi.org/10.5281/zenodo.18189766
 
 ## Citation
 If you use or cite this work, please refer to the Zenodo record above or use the
